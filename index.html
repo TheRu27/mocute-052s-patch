@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>MOCUTE-052 S — что изменилось в прошивке</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef2f4;
+      --surface: #fff;
+      --surface-soft: #f5f8fa;
+      --ink: #1b2630;
+      --muted: #566674;
+      --line: #d9e1e6;
+      --accent: #087395;
+      --accent-soft: #dff3f8;
+      --accent-ink: #fff;
+      --device: #30383f;
+      --device-edge: #171d22;
+      --button: #45515a;
+      --button-ink: #f7fafc;
+      --shadow: 0 18px 48px #24374612;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #11181d;
+        --surface: #1a242b;
+        --surface-soft: #222f37;
+        --ink: #edf4f7;
+        --muted: #b0c0ca;
+        --line: #34454f;
+        --accent: #6ccbe7;
+        --accent-soft: #183a46;
+        --accent-ink: #10232b;
+        --device: #3a444c;
+        --device-edge: #0a1014;
+        --button: #596670;
+        --button-ink: #fff;
+        --shadow: 0 18px 48px #0004;
+      }
+    }
+    * { box-sizing: border-box }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.5 }
+    button { font: inherit }
+    button, a { -webkit-tap-highlight-color: transparent }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px }
+    a { color: var(--accent); text-underline-offset: 3px }
+    h1, h2, h3, p { margin: 0 }
+    h1, h2, h3 { line-height: 1.18 }
+    h1 { font-size: clamp(30px, 4.8vw, 50px); letter-spacing: -.04em }
+    h2 { font-size: clamp(21px, 2.5vw, 28px); letter-spacing: -.025em }
+    h3 { font-size: 17px }
+    .wrap { max-width: 1160px; margin: auto; padding: 32px 20px 56px; display: grid; gap: 26px }
+    .eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase }
+    .hero { display: grid; gap: 12px }
+    .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+    .hero p:not(.eyebrow) { color: var(--muted); max-width: 72ch; font-size: 17px }
+    .hero-links { display: flex; flex-wrap: wrap; gap: 8px 22px }
+    .hero a { width: fit-content; font-weight: 700 }
+    .panel, .note { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow) }
+    .panel { padding: 22px }
+    .panel-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; margin-bottom: 18px }
+    .panel-head p { margin-top: 5px; color: var(--muted); font-size: 14px }
+    .mode-toggle { display: inline-flex; padding: 4px; gap: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-soft) }
+    .mode-toggle button { border: 0; border-radius: 999px; padding: 8px 21px; background: transparent; color: var(--muted); font-weight: 800; cursor: pointer }
+    .mode-toggle button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink) }
+    .layout { display: grid; grid-template-columns: minmax(300px, 350px) minmax(0, 1fr); gap: 22px; align-items: start }
+    .diagram { position: sticky; top: 16px; min-width: 0; padding: 16px 10px 14px; border-radius: 18px; background: var(--surface-soft); display: grid; justify-items: center; gap: 10px }
+    .diagram-caption { color: var(--muted); font-size: 13px; text-align: center; max-width: 32ch }
+    .device-stage { position: relative; width: 310px; height: 475px; max-width: 100% }
+    .device-body { position: absolute; top: 30px; bottom: 8px; left: 55px; width: 200px; border: 5px solid var(--device-edge); border-radius: 76px 76px 90px 90px / 70px 70px 120px 120px; background: linear-gradient(105deg, #6e7a82, var(--device) 22% 78%, #20272d); box-shadow: inset 5px 0 8px #ffffff20, inset -5px 0 8px #0007, 0 15px 22px #0003 }
+    .control { position: absolute; z-index: 3; border: 1px solid #ffffff45; display: grid; place-items: center; padding: 0; background: var(--button); color: var(--button-ink); box-shadow: inset 0 2px 2px #ffffff25, 0 3px 5px #0006; cursor: pointer; font-weight: 800; line-height: 1 }
+    .control:hover { filter: brightness(1.15) }
+    body[data-mode="key"] .control.changed:not([aria-pressed="true"]) { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), 0 3px 5px #0006 }
+    .control[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 4px var(--accent-soft), 0 5px 9px #0005 }
+    .trigger { top: 11px; left: 133px; width: 44px; height: 24px; border-radius: 12px 12px 7px 7px; font-size: 11px }
+    .trigger-label { position: absolute; left: 182px; top: 6px; color: var(--muted); font-size: 12px; font-weight: 700 }
+    .stick-ring { position: absolute; z-index: 1; left: 84px; top: 73px; width: 142px; height: 142px; border: 8px solid var(--device-edge); border-radius: 50%; background: radial-gradient(circle, #66747e 0 31%, #3a454d 32% 58%, #76838c 59% 64%, #2b353d 65%); box-shadow: 0 5px 10px #0008, inset 0 3px 6px #0008 }
+    .stick-center { position: absolute; z-index: 2; left: 135px; top: 124px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #ffffff3d; background: #35414a; box-shadow: inset 0 3px 6px #0008 }
+    .joy { width: 36px; height: 32px; border-radius: 12px; font-size: 19px }
+    .joy.up { left: 137px; top: 81px }
+    .joy.right { left: 183px; top: 128px }
+    .joy.down { left: 137px; top: 177px }
+    .joy.left { left: 91px; top: 128px }
+    .small { width: 38px; height: 38px; top: 268px; border-radius: 50%; font-size: 19px }
+    .small.power { left: 103px }
+    .small.menu { left: 169px }
+    .led { position: absolute; left: 151px; top: 282px; width: 8px; height: 8px; border-radius: 50%; background: #e83f39; box-shadow: 0 0 7px #f13c36 }
+    .face { width: 43px; height: 43px; border-radius: 50%; font-size: 19px }
+    .face.x { left: 133px; top: 318px }
+    .face.a { left: 95px; top: 354px }
+    .face.y { left: 171px; top: 354px }
+    .face.b { left: 133px; top: 392px }
+    .side-label { position: absolute; left: 4px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .04em }
+    .side-label.key { top: 171px }
+    .side-label.game { top: 197px }
+    body[data-mode="key"] .side-label.key, body[data-mode="game"] .side-label.game { color: var(--accent) }
+    .side-switch { position: absolute; z-index: 3; left: 43px; top: 168px; width: 13px; height: 37px; padding: 0; border: 2px solid var(--device-edge); border-radius: 5px; background: var(--button); cursor: pointer }
+    .side-switch::after { content: ""; position: absolute; left: 1px; right: 1px; top: 1px; height: 13px; border-radius: 3px; background: var(--accent); transition: transform .2s }
+    body[data-mode="game"] .side-switch::after { transform: translateY(17px) }
+    .content { min-width: 0; display: grid; gap: 18px }
+    .detail { border: 1px solid var(--line); border-radius: 18px; padding: 20px; background: var(--surface-soft); display: grid; gap: 12px }
+    .detail-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap }
+    .detail h3 { font-size: 22px }
+    .detail p { color: var(--muted) }
+    .badge { display: inline-block; border-radius: 999px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em }
+    .compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center }
+    .compare > div { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface) }
+    .compare small { display: block; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase }
+    .compare strong { display: block; margin-top: 3px; overflow-wrap: anywhere; font-size: 16px }
+    .compare-arrow { color: var(--accent); font-size: 23px; font-weight: 800 }
+    .section-label { margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em }
+    .mapping-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+    .mapping { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; color: var(--ink); cursor: pointer }
+    .mapping.changed { border-left: 4px solid var(--accent) }
+    .mapping[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent) }
+    .mapping-name { display: block; font-size: 13px; font-weight: 800 }
+    .mapping-change { display: block; margin-top: 3px; color: var(--muted); font-size: 12px }
+    .mapping-change b { color: var(--accent) }
+    .mouse-note { border: 1px solid var(--line); border-radius: 15px; padding: 13px 15px; background: var(--surface-soft) }
+    .mouse-note strong { display: block; margin-bottom: 2px }
+    .mouse-note p { color: var(--muted); font-size: 13px }
+    .game-intro { color: var(--muted); font-size: 14px; margin-bottom: 12px }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 15px }
+    table { width: 100%; border-collapse: collapse; text-align: left }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+    th { background: var(--surface-soft); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em }
+    td:first-child { font-weight: 700 }
+    tbody tr:last-child td { border-bottom: 0 }
+    .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px }
+    .note { padding: 18px; display: grid; align-content: start; gap: 7px; box-shadow: none }
+    .note p { color: var(--muted); font-size: 14px }
+    .note strong { color: var(--ink) }
+    .note .big { color: var(--accent); font-size: 23px; font-weight: 800; letter-spacing: -.025em }
+    footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 15px }
+    [hidden] { display: none !important }
+    @media (max-width: 850px) {
+      .layout { grid-template-columns: 1fr }
+      .diagram { position: static }
+      .notes { grid-template-columns: 1fr }
+    }
+    @media (max-width: 540px) {
+      .wrap { padding: 22px 12px 38px; gap: 18px }
+      .panel { padding: 14px }
+      .mapping-grid { grid-template-columns: 1fr }
+      .compare { gap: 7px }
+      .compare > div { padding: 10px }
+      .compare strong { font-size: 14px }
+      .device-stage { transform: scale(.93); transform-origin: center top; margin-bottom: -33px }
+      th, td { padding: 9px 8px; font-size: 13px }
+    }
+  </style>
+</head>
+<body data-mode="key">
+  <main class="wrap">
+    <header class="hero">
+      <div class="hero-top">
+        <p class="eyebrow" data-i18n="eyebrow">MOCUTE-052 S · основная сборка MOCUTE-052S.apk</p>
+        <div class="mode-toggle" role="group" aria-label="Язык / Language">
+          <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+      <h1 data-i18n="title">Что изменилось в прошивке</h1>
+      <p data-i18n="intro">В KEY пульт управляет видео и мышью. В GAME на Mac он работает как HID-геймпад. Нажмите кнопку на схеме, чтобы увидеть её прежнее и новое действие.</p>
+      <p class="hero-links"><a href="https://github.com/TheRu27/mocute-052s-patch/releases" data-i18n="download-link">Скачать APK (Releases)</a><a href="https://github.com/TheRu27/mocute-052s-patch#readme" data-readme-link data-i18n="readme-link">Подробности — в README</a></p>
+    </header>
+
+    <section class="panel" aria-labelledby="remote-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="remote-title" data-i18n="remote-title">Пульт</h2>
+          <p id="mode-hint">KEY · основная сборка · изменённые кнопки выделены</p>
+        </div>
+        <div class="mode-toggle" role="group" aria-label="Вид пульта" data-i18n-aria="mode-toggle">
+          <button type="button" data-mode="key" aria-pressed="true">KEY</button>
+          <button type="button" data-mode="game" aria-pressed="false">GAME</button>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div class="diagram">
+          <div class="device-stage" role="group" aria-label="Схема пульта MOCUTE-052 S" data-i18n-aria="device-stage">
+            <div class="device-body" aria-hidden="true"></div>
+            <span class="trigger-label" data-i18n="trigger-label">Курок</span>
+            <button class="control trigger" type="button" data-control="trigger" aria-label="Курок OK" aria-pressed="false">OK</button>
+            <div class="stick-ring" aria-hidden="true"></div>
+            <div class="stick-center" aria-hidden="true"></div>
+            <button class="control joy up changed" type="button" data-control="up" aria-label="Стик вверх" aria-pressed="true">↑</button>
+            <button class="control joy right changed" type="button" data-control="right" aria-label="Стик вправо" aria-pressed="false">→</button>
+            <button class="control joy down changed" type="button" data-control="down" aria-label="Стик вниз" aria-pressed="false">↓</button>
+            <button class="control joy left changed" type="button" data-control="left" aria-label="Стик влево" aria-pressed="false">←</button>
+            <span class="side-label key">KEY</span><span class="side-label game">GAME</span>
+            <button class="side-switch" type="button" aria-label="Переключить KEY / GAME" data-i18n-aria="side-switch"></button>
+            <button class="control small power changed" type="button" data-control="power" aria-label="Power" aria-pressed="false">⏻</button>
+            <span class="led" role="img" aria-label="Красный светодиод" data-i18n-aria="led"></span>
+            <button class="control small menu changed" type="button" data-control="menu" aria-label="Кнопка меню" aria-pressed="false">≡</button>
+            <button class="control face x changed" type="button" data-control="x" aria-label="Кнопка X" aria-pressed="false">X</button>
+            <button class="control face a changed" type="button" data-control="a" aria-label="Кнопка A" aria-pressed="false">A</button>
+            <button class="control face y changed" type="button" data-control="y" aria-label="Кнопка Y" aria-pressed="false">Y</button>
+            <button class="control face b changed" type="button" data-control="b" aria-label="Кнопка B" aria-pressed="false">B</button>
+          </div>
+          <p class="diagram-caption" data-i18n="diagram-caption">На кнопках показаны буквы и значки с корпуса. Функции — в карточке с описанием.</p>
+        </div>
+
+        <div class="content">
+          <div class="detail" aria-live="polite">
+            <div class="detail-top">
+              <h3 id="detail-title">Стик ↑</h3>
+              <span class="badge" id="detail-badge">Изменено в KEY</span>
+            </div>
+            <div class="compare" id="key-compare">
+              <div><small data-i18n="before-label">Было</small><strong id="detail-before">Перемотка вперёд</strong></div>
+              <span class="compare-arrow" aria-hidden="true">→</span>
+              <div><small data-i18n="after-label">Стало</small><strong id="detail-after">Стрелка ↑</strong></div>
+            </div>
+            <div class="compare" id="game-compare" hidden>
+              <div><small data-i18n="mode-label">Режим</small><strong>GAME · AUTO</strong></div>
+              <span class="compare-arrow" aria-hidden="true">→</span>
+              <div><small data-i18n="gamepad-label">Геймпад (Chrome)</small><strong id="detail-game">Ось 1: −1, аналоговый</strong></div>
+            </div>
+            <p id="detail-text">В KEY каждое направление стика отправляет отдельную стрелку.</p>
+          </div>
+
+          <div id="key-content">
+            <p class="section-label" data-i18n="all-controls">Все кнопки · было → стало</p>
+            <div class="mapping-grid" id="mapping-grid"></div>
+          </div>
+
+          <div id="game-content" hidden>
+            <p class="game-intro" data-i18n="game-intro">Основная сборка, включение через A + Power (AUTO), боковой переключатель в GAME. Ниже — раскладка, которую видит Chrome на Mac.</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col" data-i18n="button-label">Кнопка</th><th scope="col" data-i18n="gamepad-label">Геймпад (Chrome)</th></tr></thead>
+                <tbody>
+                  <tr><td data-i18n="stick-horizontal">Стик ← / →</td><td data-i18n="axis-horizontal">Ось 0: −1 / +1, аналоговый</td></tr>
+                  <tr><td data-i18n="stick-vertical">Стик ↑ / ↓</td><td data-i18n="axis-vertical">Ось 1: −1 / +1, аналоговый</td></tr>
+                  <tr><td data-i18n="trigger-label">Курок</td><td data-i18n="game-trigger">B0 + B9 + ось 4 (аналоговый)</td></tr>
+                  <tr><td data-i18n="power-short">Power (коротко)</td><td>B1</td></tr>
+                  <tr><td>X</td><td>B3</td></tr>
+                  <tr><td>Y</td><td>B4</td></tr>
+                  <tr><td>B</td><td data-i18n="game-b">B7 + клик мыши</td></tr>
+                  <tr><td>≡</td><td data-i18n="game-menu">B10, только короткий импульс</td></tr>
+                  <tr><td>A</td><td>B11</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="mouse-note" id="mouse-note">
+            <strong data-i18n="mouse-title">Мышь по ≡ в KEY</strong>
+            <p data-i18n="mouse-text">Нажмите ≡: стик двигает курсор, курок — клик.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="notes" aria-label="Коротко о прошивке" data-i18n-aria="notes">
+      <div class="note">
+        <h3 data-i18n="auto-title">Автовыключение</h3>
+        <p class="big" data-i18n="auto-time">30 мин → 1 ч</p>
+        <p data-i18n="auto-text">Отсчёт от последнего касания кнопки.</p>
+      </div>
+      <div class="note">
+        <h3 data-i18n="combos-title">Сочетания при включении</h3>
+        <p><strong>A + Power</strong><span data-i18n="combo-auto"> — AUTO, основной режим.</span></p>
+        <p><strong>A + X + Power</strong><span data-i18n="combo-flash"> — прошивка.</span></p>
+        <p><strong>B + Y + Power</strong><span data-i18n="combo-reset"> — сброс.</span></p>
+      </div>
+      <div class="note">
+        <h3 data-i18n="clicker-title">Слайды</h3>
+        <p data-i18n="clicker-text">Листаются из KEY: стрелки — вперёд и назад, пробел — дальше, Esc — выйти из показа. Отдельный режим кликера в работе.</p>
+      </div>
+    </section>
+
+    <footer><span data-i18n="footer-prefix">Назначения и режимы — по </span><a href="https://github.com/TheRu27/mocute-052s-patch#readme" data-readme-link>README</a>.</footer>
+  </main>
+  <script>
+    const controls = [
+      {id:"up", name:"Стик ↑", before:"Перемотка вперёд", after:"Стрелка ↑", changed:true, game:"Ось 1: −1, аналоговый", detail:"В KEY каждое направление стика отправляет отдельную стрелку.",
+        en:{name:"Stick ↑", before:"Fast-forward", after:"Up arrow ↑", game:"Axis 1: −1, analog", detail:"In KEY, each stick direction sends its own arrow key."}},
+      {id:"right", name:"Стик →", before:"Следующий трек", after:"Стрелка →", changed:true, game:"Ось 0: +1, аналоговый", detail:"В KEY каждое направление стика отправляет отдельную стрелку.",
+        en:{name:"Stick →", before:"Next track", after:"Right arrow →", game:"Axis 0: +1, analog", detail:"In KEY, each stick direction sends its own arrow key."}},
+      {id:"down", name:"Стик ↓", before:"Перемотка назад", after:"Стрелка ↓", changed:true, game:"Ось 1: +1, аналоговый", detail:"В KEY каждое направление стика отправляет отдельную стрелку.",
+        en:{name:"Stick ↓", before:"Rewind", after:"Down arrow ↓", game:"Axis 1: +1, analog", detail:"In KEY, each stick direction sends its own arrow key."}},
+      {id:"left", name:"Стик ←", before:"Предыдущий трек", after:"Стрелка ←", changed:true, game:"Ось 0: −1, аналоговый", detail:"В KEY каждое направление стика отправляет отдельную стрелку.",
+        en:{name:"Stick ←", before:"Previous track", after:"Left arrow ←", game:"Axis 0: −1, analog", detail:"In KEY, each stick direction sends its own arrow key."}},
+      {id:"trigger", name:"Курок · OK", before:"Enter", after:"Enter", changed:false, game:"B0 + B9 + ось 4 (аналоговый)", detail:"На корпусе кнопка помечена OK. В KEY код Enter не менялся; при включённой мыши курок делает клик.",
+        en:{name:"Trigger · OK", before:"Enter", after:"Enter", game:"B0 + B9 + axis 4 (analog)", detail:"The button is marked OK on the controller. Its Enter key is unchanged in KEY; in mouse mode the trigger clicks."}},
+      {id:"power", name:"Power ⏻", before:"«Меню»", after:"Esc", changed:true, game:"B1", detail:"Короткое нажатие Power. После смены типа отчёта прежний код на Mac был F7.",
+        en:{name:"Power ⏻", before:"Menu", after:"Esc", game:"B1", detail:"Short Power press. On a Mac, after the report type change, the old code appeared as F7."}},
+      {id:"menu", name:"Кнопка ≡", before:"Мышь на Mac недоступна", after:"Мышь по ≡", changed:true, game:"B10, короткий импульс", detail:"В KEY кнопка ≡ включает мышь: стик — курсор, курок — клик.",
+        en:{name:"≡ button", before:"No mouse on Mac", after:"Mouse via ≡", game:"B10, short pulse only", detail:"In KEY, ≡ enables the mouse: the stick moves the cursor and the trigger clicks."}},
+      {id:"x", name:"Кнопка X", before:"Play/Pause", after:"Пробел", changed:true, game:"B3", detail:"Пробел может управлять воспроизведением в приложении.",
+        en:{name:"X button", before:"Play/Pause", after:"Space", game:"B3", detail:"Space can control playback in an app."}},
+      {id:"a", name:"Кнопка A", before:"Громкость +", after:"Клавиатурная громкость +", changed:true, game:"B11", detail:"Назначение в KEY — клавиатурная клавиша увеличения громкости.",
+        en:{name:"A button", before:"Volume +", after:"Keyboard Volume +", game:"B11", detail:"In KEY, this is the keyboard Volume Up key."}},
+      {id:"y", name:"Кнопка Y", before:"Mute", after:"Клавиатурный Mute", changed:true, game:"B4", detail:"Назначение в KEY — клавиатурная клавиша Mute.",
+        en:{name:"Y button", before:"Mute", after:"Keyboard Mute", game:"B4", detail:"In KEY, this is the keyboard Mute key."}},
+      {id:"b", name:"Кнопка B", before:"Громкость −", after:"Клавиатурная громкость −", changed:true, game:"B7 + клик мыши", detail:"Назначение в KEY — клавиатурная клавиша уменьшения громкости.",
+        en:{name:"B button", before:"Volume −", after:"Keyboard Volume −", game:"B7 + mouse click", detail:"In KEY, this is the keyboard Volume Down key."}}
+    ];
+    const uiEn = {
+      eyebrow:"MOCUTE-052 S · main build MOCUTE-052S.apk",
+      title:"What changed in the firmware",
+      intro:"In KEY, the controller handles video and mouse input. In GAME on a Mac, it works as a HID gamepad. Select a button to see its previous and new action.",
+      "download-link":"Download the APK (Releases)",
+      "readme-link":"Details in README",
+      "remote-title":"Controller",
+      "trigger-label":"Trigger",
+      "diagram-caption":"Buttons show the letters and symbols printed on the controller. Their actions appear in the details card.",
+      "before-label":"Before",
+      "after-label":"After",
+      "mode-label":"Mode",
+      "gamepad-label":"Gamepad (Chrome)",
+      "all-controls":"All controls · before → after",
+      "game-intro":"Main build, powered on with A + Power (AUTO), side switch in GAME. This is the mapping Chrome sees on a Mac.",
+      "button-label":"Button",
+      "stick-horizontal":"Stick ← / →",
+      "axis-horizontal":"Axis 0: −1 / +1, analog",
+      "stick-vertical":"Stick ↑ / ↓",
+      "axis-vertical":"Axis 1: −1 / +1, analog",
+      "game-trigger":"B0 + B9 + axis 4 (analog)",
+      "power-short":"Power (short press)",
+      "game-b":"B7 + mouse click",
+      "game-menu":"B10, short pulse only",
+      "mouse-title":"Mouse via ≡ in KEY",
+      "mouse-text":"Press ≡: the stick moves the cursor and the trigger clicks.",
+      "auto-title":"Auto power-off",
+      "auto-time":"30 min → 1 h",
+      "auto-text":"Counted from the last button press.",
+      "combos-title":"Power-on combinations",
+      "combo-auto":" — AUTO, the main mode.",
+      "combo-flash":" — flashing.",
+      "combo-reset":" — reset.",
+      "clicker-title":"Slides",
+      "clicker-text":"Driven from KEY: arrow keys go forward and back, Space advances, Esc leaves the slideshow. A dedicated clicker mode is in progress.",
+      "footer-prefix":"Mappings and modes follow "
+    };
+    const ariaEn = {
+      "mode-toggle":"Controller view",
+      "device-stage":"MOCUTE-052 S controller diagram",
+      "side-switch":"Switch between KEY and GAME",
+      led:"Red LED",
+      notes:"Firmware at a glance"
+    };
+    const staticRu = new Map([...document.querySelectorAll("[data-i18n]")].map(node => [node, node.textContent]));
+    const ariaRu = new Map([...document.querySelectorAll("[data-i18n-aria]")].map(node => [node, node.getAttribute("aria-label")]));
+    const byId = Object.fromEntries(controls.map(control => [control.id, control]));
+    const $ = id => document.getElementById(id);
+    let mode = "key";
+    let selected = "up";
+    let language = "ru";
+
+    const grid = $("mapping-grid");
+    controls.forEach(control => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mapping" + (control.changed ? " changed" : "");
+      button.dataset.control = control.id;
+      const name = document.createElement("span");
+      name.className = "mapping-name";
+      const change = document.createElement("span");
+      change.className = "mapping-change";
+      button.append(name, change);
+      grid.append(button);
+    });
+
+    function render() {
+      const isEnglish = language === "en";
+      const control = byId[selected];
+      const chosen = isEnglish ? control.en : control;
+      document.documentElement.lang = language;
+      document.title = isEnglish
+        ? "MOCUTE-052 S — firmware changes"
+        : "MOCUTE-052 S — что изменилось в прошивке";
+      document.body.dataset.mode = mode;
+      document.querySelectorAll("[data-lang]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.lang === language));
+      });
+      document.querySelectorAll("[data-i18n]").forEach(node => {
+        node.textContent = isEnglish ? uiEn[node.dataset.i18n] : staticRu.get(node);
+      });
+      document.querySelectorAll("[data-i18n-aria]").forEach(node => {
+        node.setAttribute("aria-label", isEnglish ? ariaEn[node.dataset.i18nAria] : ariaRu.get(node));
+      });
+      document.querySelectorAll("[data-readme-link]").forEach(link => {
+        link.href = isEnglish ? "https://github.com/TheRu27/mocute-052s-patch/blob/main/README.en.md" : "https://github.com/TheRu27/mocute-052s-patch#readme";
+      });
+      document.querySelectorAll(".mode-toggle [data-mode]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+      });
+      document.querySelectorAll("[data-control]").forEach(button => {
+        const item = byId[button.dataset.control];
+        const text = isEnglish ? item.en : item;
+        button.setAttribute("aria-pressed", String(button.dataset.control === selected));
+        button.setAttribute("aria-label", text.name);
+        button.title = mode === "key"
+          ? text.name + ": " + text.before + " → " + text.after
+          : text.name + ": " + text.game;
+        if (button.classList.contains("mapping")) {
+          button.querySelector(".mapping-name").textContent = text.name;
+          button.querySelector(".mapping-change").textContent = text.before + " → " + text.after;
+        }
+      });
+      $("mode-hint").textContent = mode === "key"
+        ? (isEnglish ? "KEY · main build · changed controls highlighted" : "KEY · основная сборка · изменённые кнопки выделены")
+        : (isEnglish ? "GAME · main build · AUTO mode on Mac" : "GAME · основная сборка · режим AUTO на Mac");
+      $("detail-title").textContent = chosen.name;
+      $("detail-badge").textContent = mode === "key"
+        ? (control.changed
+          ? (isEnglish ? "Changed in KEY" : "Изменено в KEY")
+          : (isEnglish ? "Unchanged" : "Без изменения"))
+        : (isEnglish ? "Gamepad in Chrome" : "Геймпад в Chrome");
+      $("detail-before").textContent = chosen.before;
+      $("detail-after").textContent = chosen.after;
+      $("detail-game").textContent = chosen.game;
+      $("detail-text").textContent = mode === "key"
+        ? chosen.detail
+        : (isEnglish
+          ? "Main build, AUTO mode (A + Power), side switch in GAME."
+          : "Основная сборка, режим AUTO (A + Power), боковой переключатель в GAME.");
+      $("key-compare").hidden = mode !== "key";
+      $("game-compare").hidden = mode !== "game";
+      $("key-content").hidden = mode !== "key";
+      $("game-content").hidden = mode !== "game";
+      $("mouse-note").hidden = mode !== "key";
+    }
+
+    document.querySelectorAll("[data-lang]").forEach(button => {
+      button.addEventListener("click", () => { language = button.dataset.lang; render(); });
+    });
+    document.querySelectorAll(".mode-toggle [data-mode]").forEach(button => {
+      button.addEventListener("click", () => { mode = button.dataset.mode; render(); });
+    });
+    document.querySelector(".side-switch").addEventListener("click", () => {
+      mode = mode === "key" ? "game" : "key";
+      render();
+    });
+    document.querySelectorAll("[data-control]").forEach(button => {
+      button.addEventListener("click", () => { selected = button.dataset.control; render(); });
+    });
+    render();
+  </script>
+</body>
+</html>

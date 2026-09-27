@@ -1,0 +1,26 @@
+# Mocute firmware, updater APKs and anything built from them: not redistributed.
+# tools/fetch_firmware.sh downloads the originals, tools/*.sh rebuild the rest.
+*.ISP
+*.apk
+build/
+firmware/
+release/
+archive/
+apk/
+old/
+
+# Reverse-engineering material derived from the vendor firmware and app
+re/
+
+# Signing keys and local signing config
+*.keystore
+*.keystore.pass
+tools/signing.local
+
+.DS_Store
+
+# Release assets (uploaded to GitHub Releases, not committed)
+dist/
+
+# Local app settings
+.claude/
