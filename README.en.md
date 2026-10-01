@@ -129,7 +129,7 @@ Signing: on first run, `build_apk.sh` creates a key in `build/`. Keep it: Androi
 
 1. Uninstall the official Mocute updater from the phone if it is installed: the patched APK has a different signature.
 2. Install the APK.
-3. Turn off the controller, hold A+X+Power, pair `MCT-ISP01` in the phone's Bluetooth settings, start the update in the app.
+3. Turn off the controller, hold A+X+Power, pair `MCT-ISP01` in the phone's Bluetooth settings, start the update in the app. At 100% the app may report "device connection failed" — that is normal: the controller is already rebooting into the new firmware.
 4. Flashing resets the mode to AUTO. On the Mac, remove the controller from Bluetooth and pair it again: macOS caches the HID descriptor.
 
 The bootloader with flashing mode resides below `0x40000` and is not overwritten. Rollback: flash `MOCUTE-052S-restore-original.apk`.
